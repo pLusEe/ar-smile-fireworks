@@ -1,0 +1,378 @@
+:root {
+  color: #ffffff;
+  background: #07080a;
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+  margin: 0;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button {
+  color: inherit;
+}
+
+.app-shell {
+  display: grid;
+  min-height: 100dvh;
+  place-items: center;
+  overflow: hidden;
+  padding: 16px;
+  background:
+    radial-gradient(circle at 50% 15%, #252932 0, #0b0c10 38%, #050507 72%),
+    #050507;
+}
+
+.phone-stage {
+  position: relative;
+  width: min(100%, 390px);
+  aspect-ratio: 390 / 844;
+  overflow: hidden;
+  border-radius: 26px;
+  background: #111318;
+  box-shadow: 0 28px 90px rgb(0 0 0 / 55%);
+}
+
+.camera,
+.effects {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.camera {
+  object-fit: cover;
+  transform: scaleX(-1);
+}
+
+.effects {
+  pointer-events: none;
+}
+
+.live-header {
+  position: absolute;
+  z-index: 3;
+  top: 16px;
+  right: 14px;
+  left: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 8px 10px;
+  border-radius: 16px;
+  background: rgb(0 0 0 / 30%);
+  backdrop-filter: blur(10px);
+}
+
+.live-header > div:nth-child(2) {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+}
+
+.live-header strong {
+  font-size: 14px;
+}
+
+.live-header span {
+  color: rgb(255 255 255 / 70%);
+  font-size: 11px;
+}
+
+.avatar {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #f3f8ff, #ffd58a);
+  color: #111318;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.live-pill {
+  padding: 5px 8px;
+  border-radius: 6px;
+  background: #fe2c55;
+  color: #ffffff !important;
+  font-size: 10px !important;
+  font-weight: 800;
+}
+
+.instruction {
+  position: absolute;
+  z-index: 3;
+  top: 80px;
+  right: 20px;
+  left: 20px;
+  color: rgb(255 255 255 / 72%);
+  font-size: 11px;
+  line-height: 1.4;
+  text-align: center;
+  text-shadow: 0 1px 8px rgb(0 0 0 / 70%);
+}
+
+.debug-stack {
+  position: absolute;
+  z-index: 4;
+  top: 112px;
+  left: 12px;
+  display: flex;
+  width: 190px;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.debug-card {
+  padding: 10px;
+  border: 1px solid rgb(255 255 255 / 7%);
+  border-radius: 14px;
+  background: rgb(0 0 0 / 28%);
+  box-shadow: 0 6px 20px rgb(0 0 0 / 12%);
+  backdrop-filter: blur(8px);
+}
+
+.debug-heading,
+.metric {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.debug-heading {
+  padding-bottom: 8px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid rgb(255 255 255 / 8%);
+  color: rgb(255 255 255 / 68%);
+  font-size: 12px;
+}
+
+.debug-heading strong {
+  max-width: 112px;
+  overflow: hidden;
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 14%);
+  color: #ffffff;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.debug-heading strong[data-state="smile"] {
+  background: #dce7ef;
+  color: #111318;
+}
+
+.debug-heading strong[data-state="laugh"] {
+  background: #ffd58a;
+  color: #111318;
+}
+
+.metric {
+  min-height: 21px;
+  color: rgb(255 255 255 / 60%);
+  font-size: 11px;
+}
+
+.metric strong {
+  color: #ffffff;
+  font-variant-numeric: tabular-nums;
+  font-weight: 650;
+}
+
+.settings-button {
+  position: absolute;
+  z-index: 6;
+  right: 12px;
+  bottom: 74px;
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border: 1px solid rgb(255 255 255 / 10%);
+  border-radius: 999px;
+  background: rgb(0 0 0 / 45%);
+  cursor: pointer;
+  font-size: 19px;
+  backdrop-filter: blur(10px);
+}
+
+.settings-button:focus-visible,
+.settings-panel button:focus-visible,
+.error-card button:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 2px;
+}
+
+.settings-panel {
+  position: absolute;
+  z-index: 7;
+  right: 12px;
+  bottom: 126px;
+  width: 246px;
+  overflow: hidden;
+  border: 1px solid rgb(255 255 255 / 10%);
+  border-radius: 16px;
+  background: rgb(22 23 28 / 94%);
+  box-shadow: 0 16px 48px rgb(0 0 0 / 42%);
+}
+
+.settings-heading {
+  display: flex;
+  min-height: 42px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  border-bottom: 1px solid rgb(255 255 255 / 8%);
+  font-size: 13px;
+}
+
+.settings-heading button {
+  width: 36px;
+  height: 36px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font-size: 22px;
+}
+
+.toggle-row {
+  position: relative;
+  display: flex;
+  min-height: 48px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 12px;
+  border-bottom: 1px solid rgb(255 255 255 / 7%);
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.toggle-row:last-child {
+  border-bottom: 0;
+}
+
+.toggle-row input {
+  position: absolute;
+  opacity: 0;
+}
+
+.toggle-track {
+  position: relative;
+  width: 38px;
+  height: 22px;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 18%);
+}
+
+.toggle-thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  background: #ffffff;
+  transition: transform 150ms ease-out;
+}
+
+.toggle-row input:checked + .toggle-track {
+  background: #e4eef6;
+}
+
+.toggle-row input:checked + .toggle-track .toggle-thumb {
+  background: #111318;
+  transform: translateX(16px);
+}
+
+.toggle-row input:focus-visible + .toggle-track {
+  outline: 2px solid #ffffff;
+  outline-offset: 2px;
+}
+
+.privacy-note {
+  position: absolute;
+  z-index: 3;
+  right: 20px;
+  bottom: 24px;
+  left: 20px;
+  color: rgb(255 255 255 / 58%);
+  font-size: 10px;
+  text-align: center;
+  text-shadow: 0 1px 8px rgb(0 0 0 / 80%);
+}
+
+.error-card {
+  position: absolute;
+  z-index: 8;
+  top: 50%;
+  right: 24px;
+  left: 24px;
+  padding: 18px;
+  border-radius: 16px;
+  background: rgb(18 19 23 / 94%);
+  box-shadow: 0 18px 56px rgb(0 0 0 / 48%);
+  text-align: center;
+  transform: translateY(-50%);
+}
+
+.error-card p {
+  color: rgb(255 255 255 / 68%);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.error-card button {
+  min-width: 120px;
+  min-height: 44px;
+  border: 0;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #111318;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+@media (max-width: 440px) {
+  .app-shell {
+    padding: 0;
+  }
+
+  .phone-stage {
+    width: 100vw;
+    height: 100dvh;
+    border-radius: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toggle-thumb {
+    transition: none;
+  }
+}
