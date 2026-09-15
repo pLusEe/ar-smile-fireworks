@@ -53,6 +53,39 @@ const REDUCED_INFERENCE_INTERVAL_MS = 80;
 const PERFORMANCE_SAMPLE_INTERVAL_MS = 500;
 const UI_UPDATE_INTERVAL_MS = 120;
 
+const CHAT_MESSAGES = [
+  {
+    color: "#7256d8",
+    level: "45",
+    message: "Welcome to the LIVE! Here you can connect with friends",
+    name: "Aliveness",
+  },
+  {
+    color: "#ff795e",
+    level: "5",
+    message: "What’s up bois",
+    name: "Yves_SF",
+  },
+  {
+    color: "#3f9ed8",
+    level: "30",
+    message: "You are an inspiration to us all",
+    name: "ronweasly1",
+  },
+  {
+    color: "#b2a2ff",
+    level: "",
+    message: "joined",
+    name: "zero_taeyeon",
+  },
+  {
+    color: "#ff795e",
+    level: "5",
+    message: "The stream looks amazing today",
+    name: "Yves_SF",
+  },
+] as const;
+
 function Metric({
   label,
   value,
@@ -89,6 +122,119 @@ function Toggle({
         <span className="toggle-thumb" />
       </span>
     </label>
+  );
+}
+
+function CircleIcon({
+  label,
+  symbol,
+}: {
+  label: string;
+  symbol: string;
+}) {
+  return (
+    <button aria-label={label} className="tool-button" type="button">
+      <span aria-hidden="true">{symbol}</span>
+    </button>
+  );
+}
+
+function LiveRoomHud() {
+  return (
+    <>
+      <div className="top-shade" />
+      <div className="bottom-shade" />
+
+      <header className="host-top">
+        <div className="host-row">
+          <div className="host-profile">
+            <div className="host-avatar">T</div>
+            <div className="host-copy">
+              <strong>Theodore_88</strong>
+              <span>♥ 127.4K</span>
+            </div>
+            <span className="heart-level">♥ 12</span>
+          </div>
+          <div className="viewer-cluster">
+            <span className="viewer-medal viewer-medal-one">2K+</span>
+            <span className="viewer-medal viewer-medal-two">167</span>
+            <span className="viewer-count">278</span>
+            <button aria-label="End live" className="close-live" type="button">
+              ×
+            </button>
+          </div>
+        </div>
+
+        <div className="ranking-row">
+          <span className="league-pill">♛ League A2 top 80%</span>
+          <span className="live-fest-pill">
+            LIVE Fest <b>✦</b>
+          </span>
+        </div>
+
+        <div className="connection-pill">
+          <span>▥</span>
+          <span>⌂</span>
+          <span>›</span>
+        </div>
+      </header>
+
+      <section className="live-feed" aria-label="Live chat">
+        <div className="gift-tray gift-tray-primary">
+          <span className="gift-avatar">A</span>
+          <span className="gift-copy">
+            <strong>Aliveness</strong>
+            <small>sent Pancake</small>
+          </span>
+          <span className="gift-symbol">✦</span>
+          <strong className="gift-count">×30</strong>
+        </div>
+        <div className="gift-tray gift-tray-secondary">
+          <span className="gift-avatar">Y</span>
+          <span className="gift-copy">
+            <strong>Yves_SF</strong>
+            <small>sent Universe</small>
+          </span>
+          <span className="gift-symbol">◉</span>
+          <strong className="gift-count">×1</strong>
+        </div>
+
+        <div className="chat-list">
+          {CHAT_MESSAGES.map((message, index) => (
+            <div className="chat-row" key={`${message.name}-${index}`}>
+              <span
+                className="chat-avatar"
+                style={{ backgroundColor: message.color }}
+              >
+                {message.name.slice(0, 1)}
+              </span>
+              <div className="chat-copy">
+                <div className="chat-meta">
+                  {message.level ? (
+                    <span className="level-badge">◆ {message.level}</span>
+                  ) : null}
+                  <span>{message.name}</span>
+                </div>
+                <p>{message.message}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <nav className="live-toolbar" aria-label="Live controls">
+        <div>
+          <CircleIcon label="Co-host" symbol="♧" />
+          <CircleIcon label="Multi LIVE" symbol="▦" />
+        </div>
+        <div>
+          <CircleIcon label="Interaction" symbol="✦" />
+          <CircleIcon label="Share" symbol="↗" />
+          <CircleIcon label="Enhance" symbol="✣" />
+          <CircleIcon label="More" symbol="•••" />
+        </div>
+      </nav>
+    </>
   );
 }
 
@@ -136,6 +282,9 @@ export default function App() {
   const [showTracking, setShowTracking] = useState(false);
   const [snapshot, setSnapshot] = useState(EMPTY_SNAPSHOT);
   const [status, setStatus] = useState<ExperienceStatus>("idle");
+  const [stageTransform, setStageTransform] = useState(
+    "translate3d(-50%, -50%, 0)",
+  );
 
   const stop = useCallback(() => {
     requestRef.current += 1;
@@ -292,6 +441,31 @@ export default function App() {
   }, [start, stop]);
 
   useEffect(() => {
+    const updateStageTransform = () => {
+      const scale = Math.max(
+        window.innerWidth / 390,
+        window.innerHeight / 844,
+      );
+      setStageTransform(
+        `translate3d(-50%, -50%, 0) scale(${scale})`,
+      );
+    };
+    updateStageTransform();
+    window.addEventListener("resize", updateStageTransform);
+    window.visualViewport?.addEventListener(
+      "resize",
+      updateStageTransform,
+    );
+    return () => {
+      window.removeEventListener("resize", updateStageTransform);
+      window.visualViewport?.removeEventListener(
+        "resize",
+        updateStageTransform,
+      );
+    };
+  }, []);
+
+  useEffect(() => {
     showTrackingRef.current = showTracking;
     effectsRef.current?.setShowTracking(showTracking);
   }, [showTracking]);
@@ -312,7 +486,11 @@ export default function App() {
 
   return (
     <main className="app-shell">
-      <section className="phone-stage" aria-label="AR expression demo">
+      <section
+        className="phone-stage"
+        aria-label="AR expression demo"
+        style={{ transform: stageTransform }}
+      >
         <video
           ref={videoRef}
           aria-label="Front camera"
@@ -326,20 +504,7 @@ export default function App() {
           className="effects"
         />
 
-        <header className="live-header">
-          <div className="avatar" aria-hidden="true">
-            AR
-          </div>
-          <div>
-            <strong>Smile Fireworks</strong>
-            <span>LIVE · Local camera only</span>
-          </div>
-          <span className="live-pill">LIVE</span>
-        </header>
-
-        <div className="instruction">
-          Smile for wet glass · open your mouth while smiling for fireworks
-        </div>
+        <LiveRoomHud />
 
         <div className="debug-stack">
           {showFaceMetrics ? (
@@ -436,9 +601,6 @@ export default function App() {
           </section>
         ) : null}
 
-        <footer className="privacy-note">
-          Video stays on this device and is never uploaded.
-        </footer>
       </section>
     </main>
   );
