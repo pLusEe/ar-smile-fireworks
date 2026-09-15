@@ -442,9 +442,18 @@ export default function App() {
 
   useEffect(() => {
     const updateStageTransform = () => {
+      const viewportWidth =
+        window.visualViewport?.width ?? window.innerWidth;
+      const viewportHeight =
+        window.visualViewport?.height ?? window.innerHeight;
+      const horizontalGutter = viewportWidth >= 600 ? 200 : 0;
+      const verticalGutter = viewportHeight >= 700 ? 40 : 0;
       const scale = Math.max(
-        window.innerWidth / 390,
-        window.innerHeight / 844,
+        0.25,
+        Math.min(
+          (viewportWidth - horizontalGutter) / 390,
+          (viewportHeight - verticalGutter) / 844,
+        ),
       );
       setStageTransform(
         `translate3d(-50%, -50%, 0) scale(${scale})`,
