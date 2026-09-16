@@ -8,32 +8,10 @@
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
     />
     <meta name="theme-color" content="#222222" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="Solo LIVE" />
     <script>
-      (function () {
-        var resolvedTheme = "light";
-
-        try {
-          var storedMode = window.localStorage.getItem("tux_empty_demo.themeMode");
-          var mode =
-            storedMode === "light" || storedMode === "dark" || storedMode === "system"
-              ? storedMode
-              : "system";
-
-          var prefersDark =
-            window.matchMedia &&
-            window.matchMedia("(prefers-color-scheme: dark)").matches;
-
-          resolvedTheme = mode === "dark" || (mode === "system" && prefersDark) ? "dark" : "light";
-        } catch (error) {
-          resolvedTheme = "light";
-        }
-
-        document.documentElement.setAttribute("data-tux-color-scheme", resolvedTheme);
-        document.documentElement.style.colorScheme = resolvedTheme;
-      })();
+      document.documentElement.setAttribute("data-tux-color-scheme", "dark");
+      document.documentElement.style.colorScheme = "dark";
     </script>
     <script id="sim-params" type="application/json">
       { "controls": [] }

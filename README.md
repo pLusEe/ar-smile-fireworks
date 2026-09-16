@@ -34,16 +34,14 @@ npm run preview
 
 Public deployments must use HTTPS for camera access.
 
-## Routes
+## App entry
 
-- `/` — default AR camera experience with expression metrics and effect controls
-- `/ar-debug` — direct AR camera experience route
-- `/host-live` — host LIVE room scaffold without AR effects
+The project has one page: `/`. It opens the AR LIVE experience directly.
 
 ## How it works
 
 - **Face tracking:** MediaPipe Face Landmarker
-- **Interface:** TUX Web, TUX Icons, React, and React Router
+- **Interface:** TUX Web, TUX Icons, and React
 - **Expression classifier:** custom geometry classifier using mouth landmarks
 - **Personal calibration:** approximately 0.8 seconds of frontal neutral-expression samples
 - **Smile:** mouth-corner lift relative to the personal baseline

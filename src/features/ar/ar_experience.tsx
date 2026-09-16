@@ -10,15 +10,13 @@ import {
   useState,
 } from "react";
 
-import { DemoControlHandle } from "../../components/demo_control_handle";
+import { FloatingControlPanel } from "../../components/floating_control_panel";
 import {
-  HostMessages,
-  HostToolbar,
-  HostTopArea,
+  LiveRoomFeed,
+  LiveRoomHeader,
+  LiveRoomToolbar,
   useCanvasTransform,
-} from "../../components/host_live_room";
-import { ThemeScope } from "../../context/theme";
-import { useOverlayStyle } from "../../hooks/useOverlayStyle";
+} from "../live_room/live_room_hud";
 import {
   createFaceTracker,
   type ExpressionState,
@@ -26,9 +24,9 @@ import {
   type FaceTracker,
 } from "./face_tracker";
 import {
-  createDebugParticleEngine,
-  type DebugParticleEngine,
-} from "./particle_engine";
+  createEffectsEngine,
+  type EffectsEngine,
+} from "./effects_engine";
 
 type ExperienceStatus =
   | "idle"
@@ -37,7 +35,7 @@ type ExperienceStatus =
   | "running"
   | "error";
 
-type DebugSnapshot = FaceMetrics & {
+type ExperienceSnapshot = FaceMetrics & {
   activeParticles: number;
   calibrationProgress: number;
   effectFps: number;
@@ -50,7 +48,7 @@ type DebugSnapshot = FaceMetrics & {
   reducedLoad: boolean;
 };
 
-const INITIAL_SNAPSHOT: DebugSnapshot = {
+const INITIAL_SNAPSHOT: ExperienceSnapshot = {
   activeParticles: 0,
   calibrationProgress: 0,
   effectFps: 0,
@@ -82,7 +80,7 @@ function formatScore(score: number) {
   return score.toFixed(2);
 }
 
-function DebugMetric({
+function Metric({
   label,
   value,
 }: {
@@ -128,20 +126,14 @@ function DisplaySetting({
   );
 }
 
-export default function ArDebugPage() {
-  useOverlayStyle({
-    homeIndicator: "light",
-    statusBar: "light",
-    themeColor: "#000000",
-  });
-
+export default function ArExperience() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const canvasTransform = useCanvasTransform();
-  const engineRef = useRef<DebugParticleEngine | null>(null);
+  const engineRef = useRef<EffectsEngine | null>(null);
   const faceTrackerRef = useRef<FaceTracker | null>(null);
   const inferenceFrameRef = useRef(0);
   const inferenceFramesRef = useRef(0);
-  const latestSnapshotRef = useRef<DebugSnapshot>(INITIAL_SNAPSHOT);
+  const latestSnapshotRef = useRef<ExperienceSnapshot>(INITIAL_SNAPSHOT);
   const lastInferenceAtRef = useRef(0);
   const lastPerformanceSampleAtRef = useRef(0);
   const lastUiUpdateAtRef = useRef(0);
@@ -150,10 +142,10 @@ export default function ArDebugPage() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [errorMessage, setErrorMessage] = useState("");
   const [snapshot, setSnapshot] =
-    useState<DebugSnapshot>(INITIAL_SNAPSHOT);
+    useState<ExperienceSnapshot>(INITIAL_SNAPSHOT);
   const [status, setStatus] = useState<ExperienceStatus>("idle");
   const [isControlPanelOpen, setIsControlPanelOpen] = useState(false);
-  const [showFaceMetrics, setShowFaceMetrics] = useState(true);
+  const [showFaceMetrics, setShowFaceMetrics] = useState(false);
   const [showPerformance, setShowPerformance] = useState(false);
   const [showTracking, setShowTracking] = useState(false);
   const showTrackingRef = useRef(showTracking);
@@ -216,7 +208,7 @@ export default function ArDebugPage() {
         faceTracker.close();
         return;
       }
-      const particleEngine = createDebugParticleEngine(
+      const particleEngine = createEffectsEngine(
         canvas,
         video,
       );
@@ -357,8 +349,8 @@ export default function ArDebugPage() {
         : "Loading";
 
   return (
-    <ThemeScope
-      mode="dark"
+    <div
+      data-tux-color-scheme="dark"
       className="relative h-full min-h-0 overflow-hidden bg-[#000000]"
     >
       <main className="relative h-full min-h-0 overflow-hidden bg-[#000000] text-[#ffffff]">
@@ -385,9 +377,9 @@ export default function ArDebugPage() {
           />
           <div className="pointer-events-none absolute inset-x-0 top-0 z-[11] h-[160px] bg-[linear-gradient(to_bottom,rgba(0,0,0,0.34),rgba(0,0,0,0.12),transparent)]" />
           <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[11] h-[310px] bg-[linear-gradient(to_bottom,transparent,rgba(0,0,0,0.12),rgba(0,0,0,0.34))]" />
-          <HostTopArea />
-          <HostMessages />
-          <HostToolbar />
+          <LiveRoomHeader />
+          <LiveRoomFeed />
+          <LiveRoomToolbar />
 
           <div className="pointer-events-none absolute left-[12px] top-[164px] z-30 flex w-[184px] flex-col gap-[8px]">
             {showFaceMetrics ? (
@@ -422,15 +414,15 @@ export default function ArDebugPage() {
                 </div>
 
                 <div className="mt-[9px] flex flex-col gap-[5px] border-t border-[rgba(255,255,255,0.08)] pt-[8px]">
-                  <DebugMetric
+                  <Metric
                     label="嘴角上扬"
                     value={formatScore(snapshot.mouthCornerLift)}
                   />
-                  <DebugMetric
+                  <Metric
                     label="张嘴比例"
                     value={formatScore(snapshot.mouthOpenRatio)}
                   />
-                  <DebugMetric
+                  <Metric
                     label="嘴宽比例"
                     value={formatScore(snapshot.mouthWidthRatio)}
                   />
@@ -444,23 +436,23 @@ export default function ArDebugPage() {
                 className="rounded-[14px] border border-[rgba(255,255,255,0.07)] bg-[rgba(0,0,0,0.28)] p-[10px] shadow-[0_6px_20px_rgba(0,0,0,0.12)] backdrop-blur-[8px]"
               >
                 <div className="flex flex-col gap-[5px]">
-                  <DebugMetric
+                  <Metric
                     label="Effect FPS"
                     value={`${snapshot.effectFps}`}
                   />
-                  <DebugMetric
+                  <Metric
                     label="Inference FPS"
                     value={`${snapshot.inferenceFps}`}
                   />
-                  <DebugMetric
+                  <Metric
                     label="Inference latency"
                     value={`${snapshot.inferenceLatency.toFixed(1)} ms`}
                   />
-                  <DebugMetric
+                  <Metric
                     label="Active particles"
                     value={`${snapshot.activeParticles}`}
                   />
-                  <DebugMetric
+                  <Metric
                     label="Load mode"
                     value={snapshot.reducedLoad ? "Reduced" : "Full"}
                   />
@@ -490,16 +482,16 @@ export default function ArDebugPage() {
             </section>
           ) : null}
 
-          <DemoControlHandle
+          <FloatingControlPanel
             ariaLabel="显示设置面板"
             canvasHeight={844}
-            dataContext="ar-display"
+            contextId="ar-display"
             isOpen={isControlPanelOpen}
             onOpenChange={setIsControlPanelOpen}
           >
             {({ panelDragHandleProps, panelRight, panelTop }) => (
-              <ThemeScope
-                mode="dark"
+              <div
+                data-tux-color-scheme="dark"
                 className="pointer-events-auto absolute w-[272px] overflow-hidden border border-[rgba(255,255,255,0.1)] bg-[var(--tux-v2-color-ui-page-flat-2,#1f1f1f)] shadow-[0_12px_36px_rgba(0,0,0,0.42)]"
                 style={{
                   borderRadius:
@@ -508,7 +500,7 @@ export default function ArDebugPage() {
                   top: panelTop,
                 }}
               >
-                <div data-demo-control-surface>
+                <div data-floating-control-surface>
                   <div
                     aria-label="拖动显示设置面板"
                     className="flex h-[38px] cursor-move touch-none select-none items-center justify-between border-b border-[rgba(255,255,255,0.1)] px-[12px]"
@@ -543,11 +535,11 @@ export default function ArDebugPage() {
                     />
                   </div>
                 </div>
-              </ThemeScope>
+              </div>
             )}
-          </DemoControlHandle>
+          </FloatingControlPanel>
         </div>
       </main>
-    </ThemeScope>
+    </div>
   );
 }

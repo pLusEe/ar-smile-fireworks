@@ -7,8 +7,6 @@ import {
 } from "react";
 import { TUXIconNowSetting } from "@byted-tiktok/tux-icons";
 
-import { ThemeScope } from "../context/theme";
-
 const DEFAULT_CANVAS_HEIGHT = 844;
 const HANDLE_WIDTH = 28;
 const HANDLE_HEIGHT = 52;
@@ -17,7 +15,7 @@ const HANDLE_TOP_MIN = 96;
 const HANDLE_BOTTOM_INSET = 16;
 const PANEL_GAP = 8;
 
-type DemoControlPanelLayout = {
+type FloatingPanelLayout = {
   handleTop: number;
   panelDragHandleProps: {
     onPointerCancel: (event: ReactPointerEvent<HTMLDivElement>) => void;
@@ -29,25 +27,25 @@ type DemoControlPanelLayout = {
   panelTop: number;
 };
 
-type DemoControlHandleProps = {
+type FloatingControlPanelProps = {
   ariaLabel: string;
-  children?: (layout: DemoControlPanelLayout) => ReactNode;
+  children?: (layout: FloatingPanelLayout) => ReactNode;
   canvasHeight?: number;
-  dataContext?: string;
+  contextId?: string;
   hidden?: boolean;
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
 };
 
-export function DemoControlHandle({
+export function FloatingControlPanel({
   ariaLabel,
   children,
   canvasHeight = DEFAULT_CANVAS_HEIGHT,
-  dataContext,
+  contextId,
   hidden = false,
   isOpen,
   onOpenChange,
-}: DemoControlHandleProps) {
+}: FloatingControlPanelProps) {
   const [handleTop, setHandleTop] = useState(HANDLE_INITIAL_TOP);
   const [panelRight, setPanelRight] = useState(HANDLE_WIDTH + PANEL_GAP);
   const [panelTop, setPanelTop] = useState(HANDLE_INITIAL_TOP);
@@ -173,7 +171,7 @@ export function DemoControlHandle({
 
     const canvas = panelRef.current;
     const panel = event.currentTarget.closest<HTMLElement>(
-      "[data-demo-control-surface]",
+      "[data-floating-control-surface]",
     );
     if (!canvas || !panel) {
       return;
@@ -256,14 +254,14 @@ export function DemoControlHandle({
   return (
     <div
       className="pointer-events-none absolute inset-0 z-[110]"
-      data-demo-control={dataContext}
+      data-floating-control={contextId}
       style={{ display: hidden ? "none" : undefined }}
     >
       {isOpen ? (
         <div
           ref={panelRef}
           className="pointer-events-none absolute inset-0"
-          data-demo-control-panel-region
+          data-floating-control-panel-region
         >
           {children?.({
             handleTop,
@@ -288,7 +286,7 @@ export function DemoControlHandle({
             ? "bg-[rgba(255,255,255,0.28)]"
             : "bg-[rgba(255,255,255,0.18)]"
         }`}
-        data-demo-control-handle
+        data-floating-control-handle
         onClick={() => {
           if (suppressClickRef.current) {
             suppressClickRef.current = false;
@@ -321,51 +319,5 @@ export function DemoControlHandle({
         </span>
       </button>
     </div>
-  );
-}
-
-export function EmptyDemoControls({
-  title = "调参面板",
-}: {
-  title?: string;
-}) {
-  const [isOpen, setIsOpen] = useState(false);
-
-  return (
-    <DemoControlHandle
-      ariaLabel={title}
-      dataContext="empty"
-      isOpen={isOpen}
-      onOpenChange={setIsOpen}
-    >
-      {({ handleTop, panelDragHandleProps, panelRight }) => (
-        <ThemeScope
-          mode="dark"
-          className="pointer-events-auto absolute h-[52px] w-[236px] border border-[rgba(255,255,255,0.12)] bg-[var(--tux-v2-color-ui-page-flat-2,#1f1f1f)] shadow-[var(--tux-v2-shadow-floating,0_8px_28px_rgba(0,0,0,0.32))]"
-          style={{
-            right: panelRight,
-            top: Math.min(
-              Math.max(HANDLE_TOP_MIN, handleTop),
-              DEFAULT_CANVAS_HEIGHT - 148,
-            ),
-            borderRadius:
-              "var(--tux-v2-radius-container-level2-small, 16px)",
-          }}
-        >
-          <div
-            aria-label="拖动控制面板"
-            className="flex h-full cursor-move touch-none select-none items-center justify-center"
-            data-demo-control-surface
-            role="region"
-            {...panelDragHandleProps}
-          >
-            <span
-              aria-hidden="true"
-              className="h-[3px] w-[32px] rounded-full bg-[rgba(255,255,255,0.28)]"
-            />
-          </div>
-        </ThemeScope>
-      )}
-    </DemoControlHandle>
   );
 }

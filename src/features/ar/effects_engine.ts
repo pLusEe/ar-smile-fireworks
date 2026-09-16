@@ -50,7 +50,7 @@ export type ParticlePerformanceSnapshot = {
   reducedLoad: boolean;
 };
 
-export type DebugParticleEngine = {
+export type EffectsEngine = {
   clearTracking: () => void;
   destroy: () => void;
   getPerformanceSnapshot: () => ParticlePerformanceSnapshot;
@@ -226,10 +226,10 @@ function resetRainParticle(particle: Particle, width: number, height: number) {
   particle.y = particle.startY;
 }
 
-export function createDebugParticleEngine(
+export function createEffectsEngine(
   canvas: HTMLCanvasElement,
   video: HTMLVideoElement,
-): DebugParticleEngine {
+): EffectsEngine {
   const context = canvas.getContext("2d", {
     alpha: true,
     desynchronized: true,

@@ -1,21 +1,11 @@
 import { TUXApp } from "@byted-tiktok/tux-web";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
 
-import { useTheme } from "./context/theme";
-import { APP_ROUTES } from "./routes";
+import ArExperience from "./features/ar/ar_experience";
 
 export default function App() {
-  const { resolvedTheme } = useTheme();
-
   return (
-    <TUXApp theme={resolvedTheme} textDirection="ltr" platform="iOS">
-      <BrowserRouter>
-        <Routes>
-          {APP_ROUTES.map((route) => (
-            <Route key={route.id} path={route.path} element={route.element} />
-          ))}
-        </Routes>
-      </BrowserRouter>
+    <TUXApp theme="dark" textDirection="ltr" platform="iOS">
+      <ArExperience />
     </TUXApp>
   );
 }
