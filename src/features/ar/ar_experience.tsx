@@ -355,7 +355,7 @@ export default function ArExperience() {
     >
       <main className="relative h-full min-h-0 overflow-hidden bg-[#000000] text-[#ffffff]">
         <div
-          className="absolute left-1/2 top-1/2 h-[844px] w-[390px] origin-center overflow-hidden bg-[#000000] font-[var(--app-font-sans)] text-[#ffffff] shadow-[0_0_80px_rgba(0,0,0,0.42)]"
+          className="absolute left-1/2 top-1/2 h-[844px] w-[390px] origin-center overflow-hidden rounded-[56px] bg-[#000000] font-[var(--app-font-sans)] text-[#ffffff] shadow-[0_0_80px_rgba(0,0,0,0.42)]"
           data-live-room-role="host"
           style={{ color: "#ffffff", transform: canvasTransform }}
         >
