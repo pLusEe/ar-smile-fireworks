@@ -3,10 +3,15 @@ import {
   TUXIconHeartFill,
 } from "@byted-tiktok/tux-icons";
 import { TUXText } from "@byted-tiktok/tux-web";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
+  LiveAnnouncementBanner,
+  useLiveAnnouncementCycle,
+} from "./live_announcement";
+import {
+  ANNOUNCEMENT_SCRIPT,
+  CHAT_SCRIPT,
   LIVE_ROOM_ASSETS,
-  STATIC_CHAT_MESSAGES,
   type ChatMessage,
 } from "./live_room_data";
 
@@ -338,26 +343,75 @@ function MessageRow({ message }: { message: ChatMessage }) {
 }
 
 export function LiveRoomFeed() {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const nextMessageIndexRef = useRef(6);
+  const activeAnnouncement =
+    useLiveAnnouncementCycle(ANNOUNCEMENT_SCRIPT);
+  const [messages, setMessages] = useState(() =>
+    CHAT_SCRIPT.slice(0, 6).map((message, index) => ({
+      id: index,
+      message,
+    })),
+  );
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setMessages((current) => {
+        const scriptIndex =
+          nextMessageIndexRef.current % CHAT_SCRIPT.length;
+        const nextMessage = {
+          id: nextMessageIndexRef.current,
+          message: CHAT_SCRIPT[scriptIndex],
+        };
+        nextMessageIndexRef.current += 1;
+        return [...current, nextMessage].slice(-16);
+      });
+    }, 2_200);
+
+    return () => window.clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    const node = scrollRef.current;
+    if (!node) {
+      return;
+    }
+
+    node.scrollTo({
+      behavior: nextMessageIndexRef.current > 6 ? "smooth" : "auto",
+      top: node.scrollHeight,
+    });
+  }, [messages]);
+
   return (
-    <section
-      aria-label="直播评论"
-      className="pointer-events-none absolute inset-x-[12px] bottom-[78px] z-20 h-[252px]"
-    >
+    <section className="pointer-events-none absolute inset-x-[12px] bottom-[78px] z-20 h-[284px]">
+      {activeAnnouncement ? (
+        <div className="absolute left-0 top-0 z-10 h-[24px] w-full overflow-hidden">
+          <LiveAnnouncementBanner announcement={activeAnnouncement} />
+        </div>
+      ) : null}
       <div
-        className="absolute inset-0 overflow-hidden"
+        className="absolute inset-x-0 bottom-0 overflow-hidden transition-[height] duration-[280ms] ease-[cubic-bezier(0.2,0.85,0.25,1)]"
         style={{
+          height: activeAnnouncement ? "252px" : "284px",
           maskImage:
             "linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.5) 10%, #000 22%, #000 100%)",
           WebkitMaskImage:
             "linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.5) 10%, #000 22%, #000 100%)",
         }}
       >
-        <div className="flex min-h-full flex-col justify-end gap-[12px]">
-          {STATIC_CHAT_MESSAGES.slice(0, 6).map((message, index) => (
-            <MessageRow key={`${message.username}-${index}`} message={message} />
-          ))}
+        <div
+          ref={scrollRef}
+          aria-label="滚动直播评论"
+          className="absolute inset-x-0 bottom-0 h-[284px] overflow-hidden [overflow-anchor:none]"
+        >
+          <div className="flex min-h-full flex-col justify-end gap-[12px]">
+            {messages.map(({ id, message }) => (
+              <MessageRow key={id} message={message} />
+            ))}
           </div>
         </div>
+      </div>
     </section>
   );
 }

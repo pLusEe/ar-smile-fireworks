@@ -117,7 +117,7 @@ export const LIVE_ROOM_ASSETS = {
   ).href,
 };
 
-export const STATIC_CHAT_MESSAGES: ChatMessage[] = [
+export const CHAT_SCRIPT: ChatMessage[] = [
   {
     avatar: LIVE_ROOM_ASSETS.commentOne,
     badge: true,
@@ -166,5 +166,12 @@ export const STATIC_CHAT_MESSAGES: ChatMessage[] = [
     level: "30",
     message: "Let’s go! 🔥",
     username: "ronweasly1",
+  },
+];
+
+export const ANNOUNCEMENT_SCRIPT = [
+  {
+    id: "host-upgrade-1",
+    text: "Yves_SF just upgraded to Lv.20",
   },
 ];

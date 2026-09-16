@@ -74,6 +74,27 @@ a:focus-visible {
 	outline-offset: 2px;
 }
 
+.live-announcement {
+	animation: live-announcement-cycle 4.58s both;
+	will-change: transform, opacity;
+}
+
+@keyframes live-announcement-cycle {
+	0% {
+		opacity: 0;
+		transform: translateX(-182px);
+	}
+	6.6%,
+	93.9% {
+		opacity: 1;
+		transform: translateX(0);
+	}
+	100% {
+		opacity: 0;
+		transform: translateX(0);
+	}
+}
+
 .expression-threshold-range {
 	height: 24px;
 	margin: 0;
@@ -88,6 +109,12 @@ a:focus-visible {
 }
 
 @media (prefers-reduced-motion: reduce) {
+	.live-announcement {
+		animation: none;
+		opacity: 1;
+		transform: translateX(0);
+	}
+
 	*,
 	*::before,
 	*::after {
