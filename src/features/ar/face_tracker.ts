@@ -66,7 +66,6 @@ type ExpressionMachine = {
 export type FaceTracker = {
   close: () => void;
   detect: (video: HTMLVideoElement, timestampMs: number) => FaceTrackingFrame;
-  setThresholds: (thresholds: ExpressionThresholds) => void;
 };
 
 const EMPTY_METRICS: FaceMetrics = {
@@ -359,8 +358,6 @@ export async function createFaceTracker(): Promise<FaceTracker> {
   let baselineStartedAt = 0;
   let faceMissingSince = 0;
   let isCalibrated = false;
-  let thresholds = { ...DEFAULT_EXPRESSION_THRESHOLDS };
-
   const resetCalibration = () => {
     baselineCornerLift = 0;
     baselineMouthOpen = 0;
@@ -455,7 +452,7 @@ export async function createFaceTracker(): Promise<FaceTracker> {
               machine,
               metrics,
               timestampMs,
-              thresholds,
+              DEFAULT_EXPRESSION_THRESHOLDS,
             )
           : "neutral";
       if (!isFrontal) {
@@ -463,8 +460,10 @@ export async function createFaceTracker(): Promise<FaceTracker> {
       } else if (
         isCalibrated &&
         expression === "neutral" &&
-        metrics.mouthCornerLift < thresholds.smileLiftExit * 0.7 &&
-        metrics.mouthOpenRatio < thresholds.laughMouthExit * 0.7
+        metrics.mouthCornerLift <
+          DEFAULT_EXPRESSION_THRESHOLDS.smileLiftExit * 0.7 &&
+        metrics.mouthOpenRatio <
+          DEFAULT_EXPRESSION_THRESHOLDS.laughMouthExit * 0.7
       ) {
         baselineCornerLift +=
           (rawMetrics.mouthCornerLift - baselineCornerLift) * 0.004;
@@ -489,9 +488,6 @@ export async function createFaceTracker(): Promise<FaceTracker> {
         landmarks,
         metrics,
       };
-    },
-    setThresholds: (nextThresholds) => {
-      thresholds = { ...nextThresholds };
     },
   };
 }

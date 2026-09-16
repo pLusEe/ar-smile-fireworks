@@ -42,8 +42,6 @@ type PendingFireworkBurst = {
   y: number;
 };
 
-export type WeatherMode = "auto" | "sunny" | "rainy";
-
 export type ParticlePerformanceSnapshot = {
   activeParticles: number;
   effectFps: number;
@@ -51,7 +49,6 @@ export type ParticlePerformanceSnapshot = {
 };
 
 export type EffectsEngine = {
-  clearTracking: () => void;
   destroy: () => void;
   getPerformanceSnapshot: () => ParticlePerformanceSnapshot;
   setPaused: (paused: boolean) => void;
@@ -63,9 +60,7 @@ export type EffectsEngine = {
     sourceWidth: number,
     sourceHeight: number,
   ) => void;
-  setWeatherMode: (weatherMode: WeatherMode) => void;
   start: () => void;
-  triggerFirework: () => void;
 };
 
 const MAX_PARTICLES = 220;
@@ -407,7 +402,6 @@ export function createEffectsEngine(
   let wasRaining = false;
   let sourceHeight = 1;
   let sourceWidth = 1;
-  let weatherMode: WeatherMode = "auto";
   let width = 1;
   let fogStrength = 0;
   let fireworkBackdropStrength = 0;
@@ -988,9 +982,7 @@ export function createEffectsEngine(
     const displayCollider = getDisplayCollider();
     emitPendingFireworkBursts(timestamp);
     emitLaughFirework(timestamp, displayCollider);
-    const shouldRain =
-      weatherMode === "rainy" ||
-      (weatherMode === "auto" && expression === "smile");
+    const shouldRain = expression === "smile";
 
     if (shouldRain && !wasRaining) {
       for (
@@ -1467,12 +1459,6 @@ export function createEffectsEngine(
   resize();
 
   return {
-    clearTracking: () => {
-      collider = null;
-      expression = "neutral";
-      landmarks = [];
-      nextLaughFireworkAt = 0;
-    },
     destroy: () => {
       running = false;
       window.cancelAnimationFrame(frameId);
@@ -1524,9 +1510,6 @@ export function createEffectsEngine(
       sourceWidth = Math.max(1, nextSourceWidth);
       sourceHeight = Math.max(1, nextSourceHeight);
     },
-    setWeatherMode: (nextWeatherMode) => {
-      weatherMode = nextWeatherMode;
-    },
     start: () => {
       if (running) {
         return;
@@ -1536,48 +1519,6 @@ export function createEffectsEngine(
       lastPerformanceSampleAt = lastTimestamp;
       effectFrameCount = 0;
       frameId = window.requestAnimationFrame(render);
-    },
-    triggerFirework: () => {
-      const displayCollider = getDisplayCollider();
-      const headCenterX = displayCollider
-        ? displayCollider.centerX * width
-        : width * 0.5;
-      const headTop = displayCollider
-        ? (displayCollider.centerY - displayCollider.radiusY) * height
-        : height * 0.48;
-      const burstY = Math.min(
-        height * 0.18,
-        Math.max(72, headTop - height * 0.3),
-      );
-      const burstCount = 3;
-      let triggerAt = performance.now();
-
-      for (let index = 0; index < burstCount; index += 1) {
-        if (index > 0) {
-          triggerAt += 420 + Math.random() * 280;
-        }
-        const horizontalProgress =
-          burstCount <= 1 ? 0.5 : index / (burstCount - 1);
-        const horizontalOffset =
-          (horizontalProgress - 0.5) * width * 0.74 +
-          (Math.random() - 0.5) * width * 0.12;
-        const color = FIREWORK_COLD_WHITE;
-
-        pendingFireworkBursts.push({
-          color,
-          triggerAt,
-          x: Math.min(
-            width - 42,
-            Math.max(42, headCenterX + horizontalOffset),
-          ),
-          y:
-            burstY +
-            height * (0.015 + Math.random() * 0.105),
-        });
-      }
-      pendingFireworkBursts.sort(
-        (first, second) => first.triggerAt - second.triggerAt,
-      );
     },
   };
 }
