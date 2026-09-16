@@ -9,15 +9,28 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@byted-tiktok/tux-color": "file:vendor/byted-tiktok-tux-color-1.3.9.tgz",
+    "@byted-tiktok/tux-icons": "file:vendor/byted-tiktok-tux-icons-2.39.68.tgz",
+    "@byted-tiktok/tux-web": "file:vendor/byted-tiktok-tux-web-1.8.8.tgz",
     "@mediapipe/tasks-vision": "^1.0.1",
+    "@tiktok-arch/tux-illustration": "file:vendor/tiktok-arch-tux-illustration-0.2.7.tgz",
+    "framer-motion": "^12.38.0",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^7.18.3"
   },
   "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.3",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.4",
+    "postcss": "^8.5.28",
+    "tailwindcss": "^4.3.3",
     "typescript": "~5.6.2",
-    "vite": "^6.0.0"
+    "vite": "^6.0.0",
+    "vite-plugin-pwa": "^1.2.0"
+  },
+  "overrides": {
+    "lodash-es": "4.18.1"
   }
 }

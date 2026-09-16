@@ -1,0 +1,15 @@
+{
+  "redirects": [
+    {
+      "source": "/",
+      "destination": "/ar-debug",
+      "permanent": false
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/ar-debug",
+      "destination": "/index.html"
+    }
+  ]
+}

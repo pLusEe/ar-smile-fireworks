@@ -2,15 +2,43 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta
       name="viewport"
-      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
     />
-    <meta
-      name="description"
-      content="A browser-based AR expression demo with smile rain, laugh fireworks, and head collision."
-    />
-    <title>AR Smile Fireworks</title>
+    <meta name="theme-color" content="#222222" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Solo LIVE" />
+    <script>
+      (function () {
+        var resolvedTheme = "light";
+
+        try {
+          var storedMode = window.localStorage.getItem("tux_empty_demo.themeMode");
+          var mode =
+            storedMode === "light" || storedMode === "dark" || storedMode === "system"
+              ? storedMode
+              : "system";
+
+          var prefersDark =
+            window.matchMedia &&
+            window.matchMedia("(prefers-color-scheme: dark)").matches;
+
+          resolvedTheme = mode === "dark" || (mode === "system" && prefersDark) ? "dark" : "light";
+        } catch (error) {
+          resolvedTheme = "light";
+        }
+
+        document.documentElement.setAttribute("data-tux-color-scheme", resolvedTheme);
+        document.documentElement.style.colorScheme = resolvedTheme;
+      })();
+    </script>
+    <script id="sim-params" type="application/json">
+      { "controls": [] }
+    </script>
+    <title>Solo LIVE Experience</title>
   </head>
   <body>
     <div id="root"></div>

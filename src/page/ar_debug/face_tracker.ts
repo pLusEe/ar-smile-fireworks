@@ -8,14 +8,28 @@ const WASM_BASE_URL =
 const MODEL_URL =
   "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task";
 
-const CALIBRATION_MS = 800;
-const FACE_MISSING_RESET_MS = 2500;
-const MAX_FRONTAL_YAW_RATIO = 0.24;
 const SMILE_HOLD_MS = 90;
 const LAUGH_HOLD_MS = 90;
 const LAUGH_COOLDOWN_MS = 900;
+const BASELINE_CALIBRATION_MS = 800;
+const BASELINE_RESET_AFTER_MISSING_MS = 2500;
+const MAX_FRONTAL_YAW_RATIO = 0.24;
 
 export type ExpressionState = "neutral" | "smile" | "laugh";
+
+export type ExpressionThresholds = {
+  laughMouthExit: number;
+  laughMouthOpen: number;
+  smileLiftEnter: number;
+  smileLiftExit: number;
+};
+
+export const DEFAULT_EXPRESSION_THRESHOLDS: ExpressionThresholds = {
+  laughMouthExit: 0.012,
+  laughMouthOpen: 0.025,
+  smileLiftEnter: 0.01,
+  smileLiftExit: 0.003,
+};
 
 export type HeadCollider = {
   centerX: number;
@@ -32,7 +46,7 @@ export type FaceMetrics = {
   mouthWidthRatio: number;
 };
 
-export type FaceFrame = {
+export type FaceTrackingFrame = {
   calibrationProgress: number;
   collider: HeadCollider | null;
   expression: ExpressionState;
@@ -42,21 +56,17 @@ export type FaceFrame = {
   metrics: FaceMetrics;
 };
 
-export type FaceTracker = {
-  close: () => void;
-  detect: (video: HTMLVideoElement, timestampMs: number) => FaceFrame;
-};
-
-type Point = {
-  x: number;
-  y: number;
-};
-
 type ExpressionMachine = {
   candidate: ExpressionState;
   candidateSince: number;
   cooldownUntil: number;
   state: ExpressionState;
+};
+
+export type FaceTracker = {
+  close: () => void;
+  detect: (video: HTMLVideoElement, timestampMs: number) => FaceTrackingFrame;
+  setThresholds: (thresholds: ExpressionThresholds) => void;
 };
 
 const EMPTY_METRICS: FaceMetrics = {
@@ -66,18 +76,20 @@ const EMPTY_METRICS: FaceMetrics = {
   mouthWidthRatio: 0,
 };
 
-const THRESHOLDS = {
-  laughMouthExit: 0.012,
-  laughMouthOpen: 0.025,
-  smileLiftEnter: 0.01,
-  smileLiftExit: 0.003,
+type Point = {
+  x: number;
+  y: number;
 };
 
 function distance(first: Point, second: Point) {
   return Math.hypot(second.x - first.x, second.y - first.y);
 }
 
-function rotateAround(point: Point, origin: Point, angle: number): Point {
+function rotateAround(
+  point: Point,
+  origin: Point,
+  angle: number,
+): Point {
   const deltaX = point.x - origin.x;
   const deltaY = point.y - origin.y;
   const cosine = Math.cos(angle);
@@ -133,25 +145,26 @@ function readGeometryMetrics(
     rightEyePoint.y - leftEyePoint.y,
     rightEyePoint.x - leftEyePoint.x,
   );
+  const levelAngle = -faceRotation;
   const leveledLeftMouth = rotateAround(
     leftMouthPoint,
     eyeCenter,
-    -faceRotation,
+    levelAngle,
   );
   const leveledRightMouth = rotateAround(
     rightMouthPoint,
     eyeCenter,
-    -faceRotation,
+    levelAngle,
   );
   const leveledUpperLip = rotateAround(
     upperLipPoint,
     eyeCenter,
-    -faceRotation,
+    levelAngle,
   );
   const leveledLowerLip = rotateAround(
     lowerLipPoint,
     eyeCenter,
-    -faceRotation,
+    levelAngle,
   );
   const mouthWidth = Math.max(
     1,
@@ -163,52 +176,12 @@ function readGeometryMetrics(
     (leveledLeftMouth.y + leveledRightMouth.y) / 2;
 
   return {
-    faceYawRatio: Math.abs(noseTipPoint.x - eyeCenter.x) / eyeDistance,
+    faceYawRatio:
+      Math.abs(noseTipPoint.x - eyeCenter.x) / eyeDistance,
     mouthCornerLift: (mouthCenterY - cornerAverageY) / mouthWidth,
     mouthOpenRatio:
       Math.abs(leveledLowerLip.y - leveledUpperLip.y) / mouthWidth,
     mouthWidthRatio: mouthWidth / eyeDistance,
-  };
-}
-
-function estimateHeadCollider(
-  landmarks: NormalizedLandmark[],
-): HeadCollider | null {
-  if (landmarks.length === 0) {
-    return null;
-  }
-
-  let minX = 1;
-  let maxX = 0;
-  let minY = 1;
-  let maxY = 0;
-  for (const landmark of landmarks) {
-    minX = Math.min(minX, landmark.x);
-    maxX = Math.max(maxX, landmark.x);
-    minY = Math.min(minY, landmark.y);
-    maxY = Math.max(maxY, landmark.y);
-  }
-
-  const faceWidth = maxX - minX;
-  const faceHeight = maxY - minY;
-  if (faceWidth <= 0 || faceHeight <= 0) {
-    return null;
-  }
-
-  const leftEye = landmarks[33];
-  const rightEye = landmarks[263];
-  const rotation =
-    leftEye && rightEye
-      ? Math.atan2(rightEye.y - leftEye.y, rightEye.x - leftEye.x)
-      : 0;
-  const headTop = Math.max(0, minY - faceHeight * 0.35);
-
-  return {
-    centerX: (minX + maxX) / 2,
-    centerY: (headTop + maxY) / 2,
-    radiusX: faceWidth * 0.59,
-    radiusY: (maxY - headTop) * 0.54,
-    rotation,
   };
 }
 
@@ -217,30 +190,31 @@ function desiredExpression(
   currentState: ExpressionState,
   timestampMs: number,
   cooldownUntil: number,
+  thresholds: ExpressionThresholds,
 ): ExpressionState {
   if (
     currentState === "laugh" &&
-    metrics.mouthCornerLift >= THRESHOLDS.smileLiftExit &&
-    metrics.mouthOpenRatio >= THRESHOLDS.laughMouthExit
+    metrics.mouthCornerLift >= thresholds.smileLiftExit &&
+    metrics.mouthOpenRatio >= thresholds.laughMouthExit
   ) {
     return "laugh";
   }
 
   if (
     timestampMs >= cooldownUntil &&
-    metrics.mouthCornerLift >= THRESHOLDS.smileLiftEnter &&
-    metrics.mouthOpenRatio >= THRESHOLDS.laughMouthOpen
+    metrics.mouthCornerLift >= thresholds.smileLiftEnter &&
+    metrics.mouthOpenRatio >= thresholds.laughMouthOpen
   ) {
     return "laugh";
   }
 
-  if (metrics.mouthCornerLift >= THRESHOLDS.smileLiftEnter) {
+  if (metrics.mouthCornerLift >= thresholds.smileLiftEnter) {
     return "smile";
   }
 
   if (
     currentState === "smile" &&
-    metrics.mouthCornerLift >= THRESHOLDS.smileLiftExit
+    metrics.mouthCornerLift >= thresholds.smileLiftExit
   ) {
     return "smile";
   }
@@ -252,12 +226,14 @@ function updateExpressionMachine(
   machine: ExpressionMachine,
   metrics: FaceMetrics,
   timestampMs: number,
+  thresholds: ExpressionThresholds,
 ) {
   const desired = desiredExpression(
     metrics,
     machine.state,
     timestampMs,
     machine.cooldownUntil,
+    thresholds,
   );
 
   if (desired === machine.state) {
@@ -288,7 +264,52 @@ function updateExpressionMachine(
   if (desired === "laugh") {
     machine.cooldownUntil = timestampMs + LAUGH_COOLDOWN_MS;
   }
+
   return machine.state;
+}
+
+function estimateHeadCollider(
+  landmarks: NormalizedLandmark[],
+): HeadCollider | null {
+  if (landmarks.length === 0) {
+    return null;
+  }
+
+  let minX = 1;
+  let maxX = 0;
+  let minY = 1;
+  let maxY = 0;
+
+  for (const landmark of landmarks) {
+    minX = Math.min(minX, landmark.x);
+    maxX = Math.max(maxX, landmark.x);
+    minY = Math.min(minY, landmark.y);
+    maxY = Math.max(maxY, landmark.y);
+  }
+
+  const width = maxX - minX;
+  const height = maxY - minY;
+  if (width <= 0 || height <= 0) {
+    return null;
+  }
+  const headTop = Math.max(0, minY - height * 0.35);
+  const headBottom = maxY;
+  const headHeight = headBottom - headTop;
+
+  const leftEye = landmarks[33];
+  const rightEye = landmarks[263];
+  const rotation =
+    leftEye && rightEye
+      ? Math.atan2(rightEye.y - leftEye.y, rightEye.x - leftEye.x)
+      : 0;
+
+  return {
+    centerX: (minX + maxX) / 2,
+    centerY: (headTop + headBottom) / 2,
+    radiusX: width * 0.59,
+    radiusY: headHeight * 0.54,
+    rotation,
+  };
 }
 
 export async function createFaceTracker(): Promise<FaceTracker> {
@@ -299,14 +320,14 @@ export async function createFaceTracker(): Promise<FaceTracker> {
   const commonOptions = {
     minFaceDetectionConfidence: 0.55,
     minFacePresenceConfidence: 0.55,
-    minTrackingConfidence: 0.5,
-    numFaces: 1,
-    outputFaceBlendshapes: false,
+      minTrackingConfidence: 0.5,
+      numFaces: 1,
+      outputFaceBlendshapes: false,
     outputFacialTransformationMatrixes: false,
     runningMode: "VIDEO" as const,
   };
-
   let landmarker: FaceLandmarker;
+
   try {
     landmarker = await FaceLandmarker.createFromOptions(fileset, {
       baseOptions: {
@@ -338,6 +359,7 @@ export async function createFaceTracker(): Promise<FaceTracker> {
   let baselineStartedAt = 0;
   let faceMissingSince = 0;
   let isCalibrated = false;
+  let thresholds = { ...DEFAULT_EXPRESSION_THRESHOLDS };
 
   const resetCalibration = () => {
     baselineCornerLift = 0;
@@ -347,7 +369,7 @@ export async function createFaceTracker(): Promise<FaceTracker> {
     isCalibrated = false;
   };
 
-  const resetExpression = (timestampMs: number) => {
+  const resetExpressionMachine = (timestampMs: number) => {
     machine.candidate = "neutral";
     machine.candidateSince = timestampMs;
     machine.state = "neutral";
@@ -358,13 +380,22 @@ export async function createFaceTracker(): Promise<FaceTracker> {
     detect: (video, timestampMs) => {
       const result = landmarker.detectForVideo(video, timestampMs);
       const landmarks = result.faceLandmarks[0] ?? [];
+      const rawMetrics =
+        landmarks.length > 0
+          ? readGeometryMetrics(
+              landmarks,
+              video.videoWidth,
+              video.videoHeight,
+            )
+          : EMPTY_METRICS;
 
       if (landmarks.length === 0) {
-        resetExpression(timestampMs);
+        resetExpressionMachine(timestampMs);
         if (faceMissingSince === 0) {
           faceMissingSince = timestampMs;
         } else if (
-          timestampMs - faceMissingSince >= FACE_MISSING_RESET_MS
+          timestampMs - faceMissingSince >=
+          BASELINE_RESET_AFTER_MISSING_MS
         ) {
           resetCalibration();
         }
@@ -380,16 +411,10 @@ export async function createFaceTracker(): Promise<FaceTracker> {
       }
 
       faceMissingSince = 0;
-      const rawMetrics = readGeometryMetrics(
-        landmarks,
-        video.videoWidth,
-        video.videoHeight,
-      );
-      const isFrontal =
-        rawMetrics.faceYawRatio <= MAX_FRONTAL_YAW_RATIO;
+      const isFrontal = rawMetrics.faceYawRatio <= MAX_FRONTAL_YAW_RATIO;
 
       if (!isCalibrated) {
-        resetExpression(timestampMs);
+        resetExpressionMachine(timestampMs);
         if (!isFrontal) {
           baselineCornerLift = 0;
           baselineMouthOpen = 0;
@@ -403,7 +428,8 @@ export async function createFaceTracker(): Promise<FaceTracker> {
           baselineMouthOpen += rawMetrics.mouthOpenRatio;
           baselineSampleCount += 1;
           if (
-            timestampMs - baselineStartedAt >= CALIBRATION_MS &&
+            timestampMs - baselineStartedAt >=
+              BASELINE_CALIBRATION_MS &&
             baselineSampleCount >= 6
           ) {
             baselineCornerLift /= baselineSampleCount;
@@ -425,16 +451,20 @@ export async function createFaceTracker(): Promise<FaceTracker> {
       };
       const expression =
         isCalibrated && isFrontal
-          ? updateExpressionMachine(machine, metrics, timestampMs)
+          ? updateExpressionMachine(
+              machine,
+              metrics,
+              timestampMs,
+              thresholds,
+            )
           : "neutral";
-
       if (!isFrontal) {
-        resetExpression(timestampMs);
+        resetExpressionMachine(timestampMs);
       } else if (
         isCalibrated &&
         expression === "neutral" &&
-        metrics.mouthCornerLift < THRESHOLDS.smileLiftExit * 0.7 &&
-        metrics.mouthOpenRatio < THRESHOLDS.laughMouthExit * 0.7
+        metrics.mouthCornerLift < thresholds.smileLiftExit * 0.7 &&
+        metrics.mouthOpenRatio < thresholds.laughMouthExit * 0.7
       ) {
         baselineCornerLift +=
           (rawMetrics.mouthCornerLift - baselineCornerLift) * 0.004;
@@ -448,7 +478,8 @@ export async function createFaceTracker(): Promise<FaceTracker> {
           : baselineStartedAt > 0
             ? Math.min(
                 1,
-                (timestampMs - baselineStartedAt) / CALIBRATION_MS,
+                (timestampMs - baselineStartedAt) /
+                  BASELINE_CALIBRATION_MS,
               )
             : 0,
         collider: estimateHeadCollider(landmarks),
@@ -458,6 +489,9 @@ export async function createFaceTracker(): Promise<FaceTracker> {
         landmarks,
         metrics,
       };
+    },
+    setThresholds: (nextThresholds) => {
+      thresholds = { ...nextThresholds };
     },
   };
 }

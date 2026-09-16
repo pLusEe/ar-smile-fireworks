@@ -1,11 +1,12 @@
 # AR Smile Fireworks
 
-A browser-based AR prototype:
+A browser-based AR LIVE prototype built with the same source used by the Desagent demo:
 
 - Smile to reveal a wet-glass fog effect with moving water channels.
 - Keep smiling and open your mouth to trigger fireworks.
 - Falling firework particles collide with the tracked head region.
 - Camera frames are processed locally in the browser and are never uploaded.
+- The LIVE interface uses the vendored TUX Web and TUX Icons packages.
 
 ## Run locally
 
@@ -15,11 +16,14 @@ Requirements:
 - A modern browser with camera access
 
 ```bash
-npm install
+npm ci
 npm run dev
 ```
 
 Open the local HTTPS or localhost URL shown by Vite and allow camera access.
+
+The TUX packages used by this project are checked into `vendor/` as npm tarballs.
+Installation does not require access to ByteDance's internal npm registry.
 
 ## Production build
 
@@ -30,9 +34,17 @@ npm run preview
 
 Public deployments must use HTTPS for camera access.
 
+## Routes
+
+- `/ar-debug` — AR camera experience with expression metrics and effect controls
+- `/` — host LIVE room scaffold
+
+Vercel redirects `/` to `/ar-debug` for the hosted demo.
+
 ## How it works
 
 - **Face tracking:** MediaPipe Face Landmarker
+- **Interface:** TUX Web, TUX Icons, React, and React Router
 - **Expression classifier:** custom geometry classifier using mouth landmarks
 - **Personal calibration:** approximately 0.8 seconds of frontal neutral-expression samples
 - **Smile:** mouth-corner lift relative to the personal baseline
