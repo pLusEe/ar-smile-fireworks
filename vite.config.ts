@@ -1,6 +1,5 @@
 import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
-import { VitePWA } from "vite-plugin-pwa";
 
 function devLanOriginForQr(): Plugin {
   return {
@@ -28,29 +27,5 @@ export default defineConfig({
   plugins: [
     devLanOriginForQr(),
     react(),
-    VitePWA({
-      registerType: "autoUpdate",
-      injectRegister: "auto",
-      manifest: {
-        name: "TUX Empty Demo",
-        short_name: "tux-empty",
-        description: "Minimal TUX UX demo scaffold",
-        start_url: "/",
-        scope: "/",
-        display: "standalone",
-        background_color: "#ffffff",
-        theme_color: "#ffffff",
-        icons: [
-          {
-            src: "/favicon.svg",
-            sizes: "any",
-            type: "image/svg+xml",
-          },
-        ],
-      },
-      devOptions: {
-        enabled: false,
-      },
-    }),
   ],
 });

@@ -36,10 +36,9 @@ Public deployments must use HTTPS for camera access.
 
 ## Routes
 
-- `/ar-debug` — AR camera experience with expression metrics and effect controls
-- `/` — host LIVE room scaffold
-
-Vercel redirects `/` to `/ar-debug` for the hosted demo.
+- `/` — default AR camera experience with expression metrics and effect controls
+- `/ar-debug` — direct AR camera experience route
+- `/host-live` — host LIVE room scaffold without AR effects
 
 ## How it works
 
