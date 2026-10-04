@@ -3,10 +3,9 @@ import type {
   NormalizedLandmark,
 } from "@mediapipe/tasks-vision";
 
-const WASM_BASE_URL =
-  "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.0.1/wasm";
-const MODEL_URL =
-  "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task";
+const ASSET_BASE_URL = import.meta.env.BASE_URL.replace(/\/$/, "");
+const WASM_BASE_URL = `${ASSET_BASE_URL}/mediapipe`;
+const MODEL_URL = `${WASM_BASE_URL}/face_landmarker.task`;
 
 const SMILE_HOLD_MS = 90;
 const LAUGH_HOLD_MS = 90;
@@ -319,9 +318,9 @@ export async function createFaceTracker(): Promise<FaceTracker> {
   const commonOptions = {
     minFaceDetectionConfidence: 0.55,
     minFacePresenceConfidence: 0.55,
-      minTrackingConfidence: 0.5,
-      numFaces: 1,
-      outputFaceBlendshapes: false,
+    minTrackingConfidence: 0.5,
+    numFaces: 1,
+    outputFaceBlendshapes: false,
     outputFacialTransformationMatrixes: false,
     runningMode: "VIDEO" as const,
   };

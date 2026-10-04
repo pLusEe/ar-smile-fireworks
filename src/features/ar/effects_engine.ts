@@ -2,6 +2,7 @@ import type {
   ExpressionState,
   HeadCollider,
 } from "./face_tracker";
+import { shouldEmitFireworks } from "./effect_triggers.mjs";
 
 type Particle = {
   active: boolean;
@@ -68,8 +69,8 @@ const FOG_RENDER_INTERVAL_MS = 50;
 const FOG_RENDER_SCALE = 0.5;
 const FIREWORK_TRAIL_POINT_COUNT = 16;
 const FIREWORK_TRAIL_SAMPLE_DISTANCE = 5;
-const LAUGH_FIREWORK_MIN_INTERVAL_MS = 480;
-const LAUGH_FIREWORK_MAX_INTERVAL_MS = 820;
+const SMILE_FIREWORK_MIN_INTERVAL_MS = 480;
+const SMILE_FIREWORK_MAX_INTERVAL_MS = 820;
 const FIREWORK_BACKDROP_MAX_OPACITY = 0.32;
 const MAX_ACTIVE_RAIN_CHANNELS = 4;
 const REDUCED_MAX_ACTIVE_RAIN_CHANNELS = 3;
@@ -392,7 +393,7 @@ export function createEffectsEngine(
   let lastTimestamp = 0;
   let highFpsSampleCount = 0;
   let lowFpsSampleCount = 0;
-  let nextLaughFireworkAt = 0;
+  let nextFireworkAt = 0;
   const pendingFireworkBursts: PendingFireworkBurst[] = [];
   let rainAccumulator = 0;
   let reducedLoad = false;
@@ -895,15 +896,15 @@ export function createEffectsEngine(
     }
   };
 
-  const emitLaughFirework = (
+  const emitExpressionFirework = (
     timestamp: number,
     displayCollider: HeadCollider | null,
   ) => {
-    if (expression !== "laugh") {
-      nextLaughFireworkAt = 0;
+    if (!shouldEmitFireworks(expression)) {
+      nextFireworkAt = 0;
       return;
     }
-    if (nextLaughFireworkAt > timestamp) {
+    if (nextFireworkAt > timestamp) {
       return;
     }
 
@@ -930,12 +931,12 @@ export function createEffectsEngine(
       (reducedLoad ? 6 : 8) + Math.floor(Math.random() * 4),
       (reducedLoad ? 2 : 3) + Math.floor(Math.random() * 2),
     );
-    nextLaughFireworkAt =
+    nextFireworkAt =
       timestamp +
-      LAUGH_FIREWORK_MIN_INTERVAL_MS +
+      SMILE_FIREWORK_MIN_INTERVAL_MS +
       Math.random() *
-        (LAUGH_FIREWORK_MAX_INTERVAL_MS -
-          LAUGH_FIREWORK_MIN_INTERVAL_MS);
+        (SMILE_FIREWORK_MAX_INTERVAL_MS -
+          SMILE_FIREWORK_MIN_INTERVAL_MS);
   };
 
   const render = (timestamp: number) => {
@@ -981,8 +982,8 @@ export function createEffectsEngine(
     context.clearRect(0, 0, width, height);
     const displayCollider = getDisplayCollider();
     emitPendingFireworkBursts(timestamp);
-    emitLaughFirework(timestamp, displayCollider);
-    const shouldRain = expression === "smile";
+    emitExpressionFirework(timestamp, displayCollider);
+    const shouldRain = shouldEmitFireworks(expression);
 
     if (shouldRain && !wasRaining) {
       for (
@@ -1339,7 +1340,7 @@ export function createEffectsEngine(
     }
 
     const hasActiveFirework =
-      expression === "laugh" ||
+      shouldEmitFireworks(expression) ||
       pendingFireworkBursts.length > 0 ||
       particles.some(
         (particle) => particle.active && particle.kind === "spark",
@@ -1463,7 +1464,7 @@ export function createEffectsEngine(
       running = false;
       window.cancelAnimationFrame(frameId);
       pendingFireworkBursts.length = 0;
-      nextLaughFireworkAt = 0;
+      nextFireworkAt = 0;
       resizeObserver?.disconnect();
       context.clearRect(0, 0, width, height);
     },
@@ -1500,10 +1501,13 @@ export function createEffectsEngine(
       nextSourceHeight,
     ) => {
       collider = nextCollider;
-      if (expression !== "laugh" && nextExpression === "laugh") {
-        nextLaughFireworkAt = performance.now();
-      } else if (nextExpression !== "laugh") {
-        nextLaughFireworkAt = 0;
+      if (
+        !shouldEmitFireworks(expression) &&
+        shouldEmitFireworks(nextExpression)
+      ) {
+        nextFireworkAt = performance.now();
+      } else if (!shouldEmitFireworks(nextExpression)) {
+        nextFireworkAt = 0;
       }
       expression = nextExpression;
       landmarks = nextLandmarks;

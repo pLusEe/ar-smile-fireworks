@@ -2,8 +2,10 @@
 
 A browser-based AR LIVE prototype built with the same source used by the Desagent demo:
 
-- Smile to reveal a wet-glass fog effect with moving water channels.
-- Keep smiling and open your mouth to trigger fireworks.
+- Smile to trigger fireworks and reveal a wet-glass fog effect with moving
+  water channels.
+- Open your mouth while smiling to enter the stronger laugh state without
+  interrupting the effects.
 - Falling firework particles collide with the tracked head region.
 - Camera frames are processed locally in the browser and are never uploaded.
 - The LIVE interface uses the vendored TUX Web and TUX Icons packages.
@@ -65,7 +67,8 @@ Open the settings button to enable:
 
 The app requests front-camera access. Frames are analyzed locally with MediaPipe. This project does not include analytics, a backend, recording, or camera-frame uploads.
 
-The MediaPipe WASM runtime and face-landmarker model are loaded from pinned public URLs.
+The MediaPipe WASM runtime and face-landmarker model are bundled in `public/mediapipe`
+so face tracking does not depend on third-party runtime availability.
 
 ## Browser notes
 
